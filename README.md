@@ -1,4 +1,4 @@
-# Notification Microservice
+# Africa's Talking Notification Microservice
 
 A single API that front-end apps call to send a notification — the service
 figures out *how* to deliver it (SMS, Email, or WhatsApp) and talks to the
