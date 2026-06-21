@@ -5,6 +5,7 @@ import {
   NotificationPayload,
   NotificationResult,
 } from './notification-provider.interface';
+import { withTimeout } from '../utils/with-timeout';
 
 let transporter: Transporter | null = null;
 
@@ -37,12 +38,16 @@ export class EmailProvider implements NotificationProvider {
     try {
       const mailer = getTransporter();
 
-      const info = await mailer.sendMail({
-        from: env.SMTP_FROM,
-        to: payload.to,
-        subject: payload.subject || 'Notification',
-        text: payload.message,
-      });
+      const info = await withTimeout(
+        mailer.sendMail({
+          from: env.SMTP_FROM,
+          to: payload.to,
+          subject: payload.subject || 'Notification',
+          text: payload.message,
+        }),
+        env.PROVIDER_TIMEOUT_MS,
+        'SMTP request timed out'
+      );
 
       return {
         success: true,

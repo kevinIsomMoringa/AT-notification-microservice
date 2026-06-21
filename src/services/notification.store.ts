@@ -1,9 +1,7 @@
-import { openSync, mkdirSync } from 'fs';
+import { closeSync, mkdirSync, openSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { env } from '../config/env';
 import { Channel, NotificationPayload } from '../providers/notification-provider.interface';
-
-const storeFilePath = resolve(process.cwd(), env.NOTIFICATION_STORE_PATH);
 
 export type NotificationLogEntry = {
   recordType: 'request' | 'job' | 'outcome';
@@ -19,14 +17,23 @@ export type NotificationLogEntry = {
 };
 
 export class NotificationStore {
-  constructor() {
-    mkdirSync(dirname(storeFilePath), { recursive: true });
-    openSync(storeFilePath, 'a').close();
+  private readonly storeFilePath: string;
+
+  constructor(storeFilePath = resolve(process.cwd(), env.NOTIFICATION_STORE_PATH)) {
+    this.storeFilePath = storeFilePath;
+    mkdirSync(dirname(this.storeFilePath), { recursive: true });
+    const fd = openSync(this.storeFilePath, 'a');
+    closeSync(fd);
+  }
+
+  get filePath(): string {
+    return this.storeFilePath;
   }
 
   private async append(entry: NotificationLogEntry) {
+    mkdirSync(dirname(this.storeFilePath), { recursive: true });
     const payload = JSON.stringify(entry) + '\n';
-    await import('fs/promises').then((fs) => fs.appendFile(storeFilePath, payload));
+    await import('fs/promises').then((fs) => fs.appendFile(this.storeFilePath, payload));
   }
 
   async recordRequest(jobId: string, channel: Channel, payload: NotificationPayload) {

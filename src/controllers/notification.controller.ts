@@ -19,13 +19,13 @@ export async function sendNotification(req: Request, res: Response, next: NextFu
     const { channel, to, message, subject, metadata } = parsed.data;
 
     const result = await notificationService.dispatch(channel, { to, message, subject, metadata });
+    const publicResult = { ...result };
+    delete publicResult.raw;
 
-    // The request was well-formed either way — a provider failure (bad
-    // credentials, carrier rejection, etc.) is a 502, not a 400/500.
-    const statusCode = result.success ? 200 : 502;
+    const statusCode = publicResult.provider === 'queue' ? 202 : publicResult.success ? 200 : 502;
 
     return res.status(statusCode).json({
-      ...result,
+      ...publicResult,
       metadata: metadata ?? null,
       timestamp: new Date().toISOString(),
     });

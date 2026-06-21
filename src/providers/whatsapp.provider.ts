@@ -5,6 +5,7 @@ import {
   NotificationPayload,
   NotificationResult,
 } from './notification-provider.interface';
+import { withTimeout } from '../utils/with-timeout';
 
 let client: Twilio | null = null;
 
@@ -27,11 +28,15 @@ export class WhatsappProvider implements NotificationProvider {
     try {
       const twilioClient = getClient();
 
-      const message = await twilioClient.messages.create({
-        from: `whatsapp:${env.TWILIO_WHATSAPP_NUMBER}`,
-        to: `whatsapp:${payload.to}`,
-        body: payload.message,
-      });
+      const message = await withTimeout(
+        twilioClient.messages.create({
+          from: `whatsapp:${env.TWILIO_WHATSAPP_NUMBER}`,
+          to: `whatsapp:${payload.to}`,
+          body: payload.message,
+        }),
+        env.PROVIDER_TIMEOUT_MS,
+        'Twilio request timed out'
+      );
 
       return {
         success: true,

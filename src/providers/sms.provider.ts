@@ -5,6 +5,7 @@ import {
   NotificationPayload,
   NotificationResult,
 } from './notification-provider.interface';
+import { withTimeout } from '../utils/with-timeout';
 
 // africastalking's typings are loose (it's a JS-first SDK), so we keep the
 // client `any`-shaped here and lean on our own types everywhere else.
@@ -34,16 +35,27 @@ export class SmsProvider implements NotificationProvider {
     try {
       const sms = getSmsClient();
 
-      const response = await sms.send({
-        to: [payload.to],
-        message: payload.message,
-        ...(env.AT_SENDER_ID ? { from: env.AT_SENDER_ID } : {}),
-      });
+      const response = (await withTimeout(
+        sms.send({
+          to: [payload.to],
+          message: payload.message,
+          ...(env.AT_SENDER_ID ? { from: env.AT_SENDER_ID } : {}),
+        }),
+        env.PROVIDER_TIMEOUT_MS,
+        'Africa\'s Talking request timed out'
+      )) as {
+        SMSMessageData?: { Recipients?: Array<{ status?: string; messageId?: string }> };
+      };
 
-      const recipient = response?.SMSMessageData?.Recipients?.[0];
+      const recipient = response.SMSMessageData?.Recipients?.[0];
+      const recipientStatus = recipient?.status;
 
-      if (!recipient || !/Success/i.test(recipient.status)) {
-        throw new Error(recipient?.status || 'Africa\'s Talking returned no recipient status');
+      if (!recipientStatus || !/Success/i.test(recipientStatus)) {
+        throw new Error(recipientStatus || 'Africa\'s Talking returned no recipient status');
+      }
+
+      if (!recipient?.messageId) {
+        throw new Error('Africa\'s Talking returned no message id');
       }
 
       return {
@@ -51,7 +63,7 @@ export class SmsProvider implements NotificationProvider {
         channel: this.channel,
         provider: 'africastalking',
         externalId: recipient.messageId,
-        status: recipient.status,
+        status: recipientStatus,
         raw: response,
       };
     } catch (error) {
