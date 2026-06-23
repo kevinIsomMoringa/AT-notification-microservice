@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import pinoHttp from 'pino-http';
 import notificationRoutes from './routes/notification.routes';
 import diagnosticsRoutes from './routes/diagnostics.routes';
+import openapiRoutes from './routes/openapi.routes';
 import { apiKeyAuth } from './middleware/api-key-auth';
 import { errorHandler, notFoundHandler } from './middleware/error-handler';
 import { metricsMiddleware, metricsRegistry } from './config/metrics';
@@ -31,7 +32,18 @@ export function createApp() {
 
   // pino and pino-http ship slightly mismatched Logger types across versions.
   app.use(pinoHttp({ logger: logger as never }));
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:', 'https:'],
+        },
+      },
+    })
+  );
   app.use(
     cors({
       origin:
@@ -66,6 +78,8 @@ export function createApp() {
     res.set('Content-Type', metricsRegistry.contentType);
     res.send(await metricsRegistry.metrics());
   });
+
+  app.use(openapiRoutes);
 
   // Diagnostics web view (HTML) + JSON log snapshot.
   // Kept unauthenticated to be easy to use locally; in production it is disabled unless enabled via env.

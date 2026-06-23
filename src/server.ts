@@ -24,6 +24,8 @@ app.listen(env.PORT, () => {
       health: `/health`,
       ready: `/ready`,
       metrics: `/metrics`,
+      docs: `/docs`,
+      openapi: `/openapi.json`,
     },
     'Notification microservice listening'
   );
