@@ -194,7 +194,7 @@ export async function diagnosticsDashboard(req: Request, res: Response, next: Ne
             <div class="k">CORS origins</div><div class="v">${escapeHtml(viewModel.corsOrigins.length ? viewModel.corsOrigins.join(', ') : '(default)')}</div>
           </div>
           <div class="toolbar">
-            <div class="hint">Quick links: <a href="/health" target="_blank">/health</a> · <a href="/ready" target="_blank">/ready</a> · <a href="/metrics" target="_blank">/metrics</a></div>
+            <div class="hint">Quick links: <a href="/health" target="_blank">/health</a> · <a href="/ready" target="_blank">/ready</a> · <a href="/metrics" target="_blank">/metrics</a> · <a href="/docs" target="_blank">/docs</a> · <a href="/openapi.json" target="_blank">/openapi.json</a></div>
             <button class="btn" onclick="location.reload()">Refresh</button>
           </div>
         </section>
